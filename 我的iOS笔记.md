@@ -4,7 +4,8 @@
 ###[3.UI](#ui)
 ###[4.内存管理](#memorymanage)
 ####[4.1 手动管理](#manual)
-####[4.2 ARC](#arc)
+####[4.2 Autorelease](#autorelease)
+####[4.3 ARC](#arc)
 ###[5.线程](#thread)
 ####[5.1 GCD](#gcd)
 ####[5.2 NSThread](#nsthread)
@@ -25,10 +26,16 @@ typedef unsigned int NSUInteger;
 #endif
 ```
 
-- 在类的定义上分为Interface和Implement两部分，这个与C的头文件和实现文件是一个概念，只不过写法上还是有区别的。Interface作为头文件的基本写法就是这样
+- 在类的定义上分为Interface和Implement两部分，这个与C的头文件和实现文件是一个概念，只不过写法上还是有区别的。Interface作为头文件的基本写法就是这样的，注意到在@Interface上有一句变量的定义，这个是全局静态变量其用法和C中定义静态变量是一样的，在@Interface的花括号中还定义了两变量，其实@private可有可无，写法与C++是一样的。而property则写在中间，在@Interface花括号区域定义的变量目前发现不能使用类似retain这样的写法。
 
 ```
-@interface FirstViewController : UIViewController
+static NSInteger staticIntInFirstViewController;
+@interface FirstViewController : UIViewController {
+@private
+    NSInteger privateInt;
+@public
+    NSInteger publicInt;
+}
 - (void)foo:(NSInteger)arg1;
 - (void)foo:(BOOL)arg1 withArg2:(NSInteger)arg2;
 + (void)foo;
@@ -37,12 +44,56 @@ typedef unsigned int NSUInteger;
 @property (nonatomic, retain) NSArray* arr;
 @end
 ```
-而Implement则是实现部分，Implement中可以添加一些只用于.m文件中的变量。
+字段和属性的使用方法如下：
+
+```
+FirstViewController* f = [[FirstViewController alloc] init];
+staticIntInFirstViewController = 1; // 只要引用了头文件，直接使用即可
+f->publicInt = 2; // C++的用法
+f.arr;
+```
+
+
+
+- 而Implement则是实现部分，Implement中可以添加一些只用于.m文件中的变量。
 
 ```
 @implementation FirstViewController {
     NSInteger I;
 }
+```
+
+- 类文件的生成：
+  
+  UI类：右键→New File→选定平台(iOS/OSX等)→Cocoa Class
+  分类(category)：右键→New File→选定平台(iOS/OSX等)→Objective-C File→输入名称、选择类型为category，选择基类。<font size=4 color=green>（在这里还可以创建协议(protocol)和类扩展(extension)）</font>
+
+- 类的扩展，类的扩展分为分类(category)和使用()的形式来扩展类。其区别在于category类似一个完整的类文件，有.h和.m。它的文件的名称通常为`原类名+分类名`，比如
+`FirstViewController+Test`,其Interface和Implement分别为
+
+```
+#import "FirstViewController.h"
+
+@interface FirstViewController (Test)
+
+@end
+```
+```
+#import "FirstViewController+Test.h"
+
+@implementation FirstViewController (Test)
+
+@end
+```
+
+而使用()来做的扩展类只是个头文件，形式如下，注意到类名后面有个`()`，这个里面定义的方法还是需要在主类的.m文件中实现。
+
+```
+#import "FirstViewController.h"
+
+@interface FirstViewController ()
+
+@end
 ```
 
 - 函数的定义,"-"为实例方法，"+"类方法（静态方法），语法上基本没有什么特别注意的，只是在函数和变量的明面上应该遵循oc命名的习惯
@@ -63,6 +114,18 @@ FirstViewController *f = [[FirstViewController alloc] init];
 [FirstViewController foo];
 [f release];
 ```
+
+- 协议(protocol)和代理(delegate)，两者是合起来用，<font size=4 color=green>代理本质上是一个实现了协议的对象的引用。</font>协议的形式为
+
+```
+@protocol FirstViewDelegate <NSObject>
+- (void)didClickSomeUI;
+@end
+```
+代理的形式为 `@property (nonatomic, assign) id<FirstViewDelegate> delegate;`
+
+需要注意的是：因为是个对象的引用，因此在使用的时候可能出现互相引用的问题，这样在定义property的时候需要定义为弱引用，防止对象因为互相调用而无法被释放。
+
 - 在流程控制上一样使用if else, switch, for, do while等
 
 ```
@@ -103,6 +166,8 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 }
 ```
+
+
 <font color=red>- FIXME 以后想到再补充。</font>
 
 ###<span id="set">2.集合</span>
@@ -126,7 +191,30 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 - alloc的实现。其实就是调用calloc方法申请内存和C语言的差不多，只不过对象的头部位有个地址用于存储引用数。而retain、release就是对引用数加减，dealloc则是free掉对象。
 
-####<apan id="arc">4.2 ARC</span>
+####<apan id="autorelease">4.2 Autorelease </span>
+- autorelease这个玩意本质上是将对象加入到最近的一个NSAutoreleasePool中，当NSAutoreleasePool销毁时会将对象release。因此这里就有个坑了，如果这个pool很久都不销毁，里面的对象就始终存在，有可能会造成内存不足。
+
+```
+NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+// 当调用autorelease方法时，其实是将对象obj放到了pool的一个对象列表中
+NSObject* obj = [[[NSObject alloc] init] autorelease];
+
+[pool drain]; // obj会被调用release方法
+
+```
+
+- 注意到main.m中有这样的代码，在最外层就有个autoreleasepool了。
+
+```
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+    }
+}
+```
+
+####<apan id="arc">4.3 ARC</span>
 ###<apan id="thread">5.线程</span>
 ####<apan id="gcd">5.1 GCD</span>
 - GCD是一套多线程库，可以有效的替换NSThread或者NSOperation。它的基本结构是`dispatch_async(queue, block);`参数中的queue可以通过`dispatch_queue_create`或者系统提供的标准dispatch queue。
