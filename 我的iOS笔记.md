@@ -172,6 +172,7 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 ###<span id="set">2.集合</span>
 ###<span id="ui">3.UI</span>
+
 ###<apan id="memorymanage">4.内存管理</span>
 ####<apan id="manual">4.1 手动管理</span>
 
@@ -214,7 +215,98 @@ int main(int argc, char * argv[]) {
 }
 ```
 
+
 ####<apan id="arc">4.3 ARC</span>
+- 我的理解
+> 所谓ARC是通过编译器和运行时的协作来实现自动管理引用计数，编译器在ARC有效的代码中加入额外的代码来加减引用计数。
+
+- 标识
+	1. __strong：默认就是
+	2. __weak：需显式使用
+	3. __autoreleasing：这个标识一些情况下是不需要显式使用，一些情况下是不需要的，最为致命。
+	4. __unsafe\_unretained：个人感觉已经被弃用了，在没有weak的时代使用的东西。
+
+- __strong
+> 这个修饰符具有持有对象的功能，与retain类似。它的使用分为如下几种情况：
+> 1、`id __strong obj = [[NSObject alloc] init];` 这行代码可以理解为如下代码，可见所谓自动管理，就是在编译出来的代码中对强引用变量调用release方法。
+> 
+> ```
+> id obj = objc_msgSend(NSObject, @selector(alloc));
+  objc_msgSend(obj, @selector(init));
+  objc_release(obj);
+> ```
+>
+> 2、`id __strong obj = [NSMutableArray array];` 这行代码可以理解为以下代码，很有意思的代码。objc_retainAutoreleasedReturnValue是持有(retain)了一个在autoreleasepool中的对象,而这个对象就是array方法的返回值。
+> 
+> ```
+> id obj = objc_msgSend(NSMutableArray, @selector(array));
+  objc_retainAutoreleasedReturnValue(obj);
+  objc_release(obj); // 离开作用域后自动释放
+> ```
+> 
+> 与`objc_retainAutoreleasedReturnValue`成对出现的是这个方法`objc_autoreleasedReturnValue`方法，对于NSMutableArray类的array方法可能是这样实现的
+> ```
+> + (id)array
+{
+    return [[NSMutableArray alloc] init];
+}
+> ```
+> 
+> 它可以理解为如下代码
+> 
+> ```
+> + (id)array
+{ 
+       id obj = objc_msgSend(NSMutableArray, @selector(alloc));
+       objc_msgSend(obj, @selector(init));
+       return objc_autoreleasedReturnValue(obj);
+}
+> ```
+> 
+> <font color=green>对于外界调用这个方法赋值的变量来说，只是在使用一个autoreleasepool中的对象。在结合`objc_retainAutoreleasedReturnValue`使用时，其实生成的对象并没有进入autoreleasepool，而是直接传递给了使用`objc_retainAutoreleasedReturnValue`方法赋值的变量。</font>
+
+- __weak
+
+	> 1、被__weak修饰的变量的地址会被放入到weak表中，这个表是个k-v形式的，key是对象的地址，value是所有引用了这个对象的变量的地址。
+	> 
+	> 2、一个对象被释放的过程是个复杂的过程，
+	> 
+	> ```
+	> objc_release -> dealloc(如果引用计数为0) -> _objc_rootDealloc 
+	> -> object_dispose -> objc_destructInstance 
+	> -> objc_clear_deallocating
+	> {
+	>   1、用对象地址找到weak表中的value
+	>   2、所有变量(weak表中记录了地址)赋值nil
+	>   3、从weak表删除记录
+	>   4、从引用计数表删除废弃对象的地址为键值的记录
+	> } 
+	  
+	>```
+	> 从以上的过程可以看出当对象被销毁后所有引用它的__weak变量都会被赋值为nil，这个过程是比较消耗CPU的，少用。
+	> 
+	> 3、<font color=green>**使用被__weak修饰的变量就是使用注册到autoreleasepool中的对象**</font>，从以下代码来进行理解这句话，
+
+	> ```
+ 	  id __weak obj1 = obj;
+      NSLog(@"%@", obj1);
+	> ```
+	> 这句话会大致被编译器翻译成这样
+	
+	> ```
+	id obj；
+    objc_initWeak(&obj1, obj);
+    id tmp = objc_loadWeakRetaind(&obj1);
+    objc_autorelease(tmp);
+    NSLog(@"%@", tmp);
+    objc_destroyWeak(&obj1);
+	> ```
+	
+	>可以看到为了能够NSLog执行时obj1引用的对象不被销毁，需要将它赋值给一个strong(默认)修饰的临时变量，而这个临时变量需要放到autoreleasepool中，因此存在一个问题，当你多次在一个作用域中多次使用weak修饰的变量，会导致很多临时变量产生而且会放到autoreleasepool中，作用域结束后autoreleasepool有很多工作要做。所以少用weak，一般就是避免循环引用。
+
+- __autoreleasing，核心就是把修饰的变量放入到autoreleasepool中，没啥多说的。
+
+
 ###<apan id="thread">5.线程</span>
 ####<apan id="gcd">5.1 GCD</span>
 - GCD是一套多线程库，可以有效的替换NSThread或者NSOperation。它的基本结构是`dispatch_async(queue, block);`参数中的queue可以通过`dispatch_queue_create`或者系统提供的标准dispatch queue。
