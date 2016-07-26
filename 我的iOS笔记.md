@@ -2,6 +2,8 @@
 ###[1.语法](#syntax)
 ###[2.集合](#set)
 ###[3.UI](#ui)
+####[3.1 手动编写UI](#manualui)
+####[3.2 autolayout](#autolayout)
 ###[4.内存管理](#memorymanage)
 ####[4.1 手动管理](#manual)
 ####[4.2 Autorelease](#autorelease)
@@ -172,6 +174,23 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 ###<span id="set">2.集合</span>
 ###<span id="ui">3.UI</span>
+####<apan id="manualui">3.1 手动编写UI</span>
+
+- 个人认知：手动编写UI在iOS不需要考虑手机屏幕尺寸的时代是很好用的，但是随着多种尺寸屏幕的出现，在自适应上手动编写UI代码就有了一些局限性。
+- 手动编写的核心在于创建UI对象，设置frame及各种属性。
+- 当然也可以使用xib来拖动UI，然后让UI与代码关联进而编写相关功能。
+
+
+####<apan id="autolayout">3.2 autolayout</span>
+
+- 目前在Xcode中可以很好的时候用约束(constraints)来实现UI的自适应。
+- constraints的使用心得：
+ 1. 按住ctrl+左键来创建约束
+ 2. 可以在Constraints下找到具体的约束，进而进行修改。![d](http://imgur.com/a/NItz3)
+ 3. 其基本的使用可以对比NGUI，都是距离superview上下左右的距离，与其它View的间距、size等约束。
+ 4. 需要注意，当存在多层关系时，需要逐层设置，否则效果可能有问题。
+ 5. 对于constraint不但可以通过视图来设置，还可以编写代码来设置或修改。
+ 
 
 ###<apan id="memorymanage">4.内存管理</span>
 ####<apan id="manual">4.1 手动管理</span>
@@ -306,6 +325,14 @@ int main(int argc, char * argv[]) {
 
 - __autoreleasing，核心就是把修饰的变量放入到autoreleasepool中，没啥多说的。
 
+- 注意事项：
+  1. 不能使用retain、release、retainCount、autorelease这样方法
+  2. 不能使用NSAllocateObject和NSDeallocateObject方法，实际上我根本没用过。
+  3. 需要在函数命名时遵守规则，比如alloc\new\copy\mutableCopy必须给与调用者对象持有权限。
+  4. 不能使用NSAutoreleasePool，可以用@autoreleasepool替换。
+  5. dealloc方法不能显示调用，很明显的例子就是在MRC中写dealloc方法时一定要调用super的dealloc方法，但是在ARC中不行了，不过notificationCenter的删除等处理还是要写在dealloc方法中的，会自动调用。
+ 
+ 
 
 ###<apan id="thread">5.线程</span>
 ####<apan id="gcd">5.1 GCD</span>
