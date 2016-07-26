@@ -174,14 +174,14 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 ###<span id="set">2.集合</span>
 ###<span id="ui">3.UI</span>
-####<apan id="manualui">3.1 手动编写UI</span>
+####<span id="manualui">3.1 手动编写UI</span>
 
 - 个人认知：手动编写UI在iOS不需要考虑手机屏幕尺寸的时代是很好用的，但是随着多种尺寸屏幕的出现，在自适应上手动编写UI代码就有了一些局限性。
 - 手动编写的核心在于创建UI对象，设置frame及各种属性。
 - 当然也可以使用xib来拖动UI，然后让UI与代码关联进而编写相关功能。
 
 
-####<apan id="autolayout">3.2 autolayout</span>
+####<span id="autolayout">3.2 autolayout</span>
 
 - 目前在Xcode中可以很好的时候用约束(constraints)来实现UI的自适应。
 - constraints的使用心得：
@@ -195,8 +195,8 @@ FirstViewController *f = [[FirstViewController alloc] init];
  5. 对于constraint不但可以通过视图来设置，还可以编写代码来设置或修改。
  
 
-###<apan id="memorymanage">4.内存管理</span>
-####<apan id="manual">4.1 手动管理</span>
+###<span id="memorymanage">4.内存管理</span>
+####<span id="manual">4.1 手动管理</span>
 
 - 自己生成的对象自己持有，可以调用`release`方法减少retain数量。
 - 非自己生成的对象也可以持有，通过调用`retain`方法可以持有对象，引用数+1。
@@ -214,7 +214,7 @@ FirstViewController *f = [[FirstViewController alloc] init];
 
 - alloc的实现。其实就是调用calloc方法申请内存和C语言的差不多，只不过对象的头部位有个地址用于存储引用数。而retain、release就是对引用数加减，dealloc则是free掉对象。
 
-####<apan id="autorelease">4.2 Autorelease </span>
+####<span id="autorelease">4.2 Autorelease </span>
 - autorelease这个玩意本质上是将对象加入到最近的一个NSAutoreleasePool中，当NSAutoreleasePool销毁时会将对象release。因此这里就有个坑了，如果这个pool很久都不销毁，里面的对象就始终存在，有可能会造成内存不足。
 
 ```
@@ -238,7 +238,7 @@ int main(int argc, char * argv[]) {
 ```
 
 
-####<apan id="arc">4.3 ARC</span>
+####<span id="arc">4.3 ARC</span>
 - 我的理解
 > 所谓ARC是通过编译器和运行时的协作来实现自动管理引用计数，编译器在ARC有效的代码中加入额外的代码来加减引用计数。
 
@@ -337,8 +337,8 @@ int main(int argc, char * argv[]) {
  
  
 
-###<apan id="thread">5.线程</span>
-####<apan id="gcd">5.1 GCD</span>
+###<span id="thread">5.线程</span>
+####<span id="gcd">5.1 GCD</span>
 - GCD是一套多线程库，可以有效的替换NSThread或者NSOperation。它的基本结构是`dispatch_async(queue, block);`参数中的queue可以通过`dispatch_queue_create`或者系统提供的标准dispatch queue。
 
 ```
@@ -557,7 +557,7 @@ PS:关于用到的时间的宏的说明
 
 - 拾遗：`dipatch_semaphore`、`dipatch_suspend`、`dipatch_resume`等。基本没用过，懒得写了。
  
-####<apan id="nsthread">5.2 NSThread</span>
-###<apan id="concurrency">6.并发</span>
-###<apan id="data">7.数据处理</span>
-###<apan id="other">8.其它</span>
+####<span id="nsthread">5.2 NSThread</span>
+###<span id="concurrency">6.并发</span>
+###<span id="data">7.数据处理</span>
+###<span id="other">8.其它</span>
