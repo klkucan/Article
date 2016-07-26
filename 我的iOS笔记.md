@@ -187,7 +187,9 @@ FirstViewController *f = [[FirstViewController alloc] init];
 - constraints的使用心得：
  1. 按住ctrl+左键来创建约束
  2. 可以在Constraints下找到具体的约束，进而进行修改。
+ 
  ![](http://i.imgur.com/Zg0x473.png)
+ 
  3. 其基本的使用可以对比NGUI，都是距离superview上下左右的距离，与其它View的间距、size等约束。
  4. 需要注意，当存在多层关系时，需要逐层设置，否则效果可能有问题。
  5. 对于constraint不但可以通过视图来设置，还可以编写代码来设置或修改。
